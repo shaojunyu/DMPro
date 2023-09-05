@@ -1,0 +1,6 @@
+data/*
+data_bk/*
+.Rproj.user
+.Rhistory
+.vscode
+old/*
