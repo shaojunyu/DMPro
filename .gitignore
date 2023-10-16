@@ -4,3 +4,4 @@ data_bk/*
 .Rhistory
 .vscode
 old/*
+tmp/*

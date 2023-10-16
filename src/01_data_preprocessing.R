@@ -95,6 +95,7 @@ write.table(test_samples, "data/test_samples.txt",
           row.names = F,
           quote = F,
           col.names = F)
+
 HM450_merged %>%
   select(chr, TargetID, MAPINFO, all_of(train_samples)) %>%
   fwrite("tmp/HM450_train.csv")
@@ -118,8 +119,4 @@ EPIC_merged %>%
 EPIC_merged %>%
   select(chr, TargetID, MAPINFO, all_of(test_samples)) %>%
   fwrite("tmp/EPIC_test.csv")
-
-
-
-
 

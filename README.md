@@ -13,3 +13,21 @@ Illumina Infinium MethylationEPIC version 2 | EPICv2 | GPL33022 | 937,691 | Jan 
 ## Data
 - 171 samples
 - data are orginized by chromosomes
+
+## Data for training autoencoder
+- https://www.ncbi.nlm.nih.gov/geo/browse/?view=platforms
+- 450K Series: https://www.ncbi.nlm.nih.gov/geo/browse/?view=series&platform=13534&display=20&zsort=samples
+
+## Runtime Environment
+- Python 3.7.3
+    - numpy 1.16.4
+- R 4.2.0
+    - data.table
+    - tidyverse
+
+```bash
+conda create -n automethy python=3.10
+conda activate automethy
+conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+
+```
