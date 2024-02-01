@@ -12,22 +12,26 @@ source("tmp/pfr/refund_lib.R")
 # Read methylation data
 # use chr18
 meth.EPIC.QC <- as.data.frame(fread("tmp/EPIC_train.csv"))
-rownames(meth.EPIC.QC) <- meth.EPIC.QC$TargetID
+rownames(meth.EPIC.QC) <- meth.EPIC.QC$ID
 meth.EPIC.QC %>%
-  filter(chr == "chr18") %>%
-  select(!c(chr, TargetID, MAPINFO)) -> meth.EPIC.QC
-meth.EPIC.QC <- as.matrix(meth.EPIC.QC)
-meth.EPIC.QC <- na.omit(meth.EPIC.QC)
+  filter(chr == "chr20") %>%
+  select(!c(chr, ID, MAPINFO)) %>%
+  drop_na() %>%
+  as.matrix() -> meth.EPIC.QC
+
+# meth.EPIC.QC <- as.matrix(meth.EPIC.QC)
+# meth.EPIC.QC <- na.omit(meth.EPIC.QC)
 
 # meth.27K.QC <- as.matrix(read.table("tmp/EPIC_train.csv", check.names = F))
 # meth.450K.QC <- as.matrix(read.table("meth_450K_QC.txt", check.names = F))
 meth.450K.QC <- as.data.frame(fread("tmp/HM450_train.csv"))
-rownames(meth.450K.QC) <- meth.450K.QC$TargetID
+rownames(meth.450K.QC) <- meth.450K.QC$ID
 meth.450K.QC %>%
-  filter(chr == "chr18") %>%
-  select(!c(chr, TargetID, MAPINFO)) -> meth.450K.QC
-meth.450K.QC <- as.matrix(meth.450K.QC)
-meth.450K.QC <- na.omit(meth.450K.QC)
+  filter(chr == "chr20") %>%
+  select(!c(chr, ID, MAPINFO)) %>%
+  drop_na() %>%
+  as.matrix() -> meth.450K.QC
+
 meth.450K.QC.raw <- meth.450K.QC
 meth.EPIC.QC.raw <- meth.EPIC.QC
 
@@ -97,7 +101,7 @@ probe <- probe[!probe.na]
 nprobe <- length(probe)
 
 
-cov.num <- 10
+cov.num <- 50
 meth.impute <- matrix(NA, nprobe, ncol(meth.27K.QC))
 rownames(meth.impute) <- probe
 colnames(meth.impute) <- colnames(meth.27K.QC)

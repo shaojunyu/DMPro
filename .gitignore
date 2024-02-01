@@ -5,3 +5,6 @@ data_bk/*
 .vscode
 old/*
 tmp/*
+.ipynb_checkpoints/
+model.cpython-310.pyc
+res/*

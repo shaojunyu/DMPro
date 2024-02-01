@@ -14,6 +14,12 @@ anno <- anno[!is.na(anno$CHR) & !is.na(anno$MAPINFO)]
 anno <- anno[order(anno$CHR, anno$MAPINFO)]
 fwrite(anno, file = "tmp/processed/450k_anno.csv")
 
+anno %>%
+  group_by(CHR) %>%
+  count() %>%
+  write.table("tmp/450K_chr_size.txt", row.names = F, col.names = F, quote = F,
+              sep = "\t")
+
 #################### GSE105018
 beta <- fread("tmp/GEO/450k_data/GSE105018_NormalisedData.csv",
               # nrows = 1000,
