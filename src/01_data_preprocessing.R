@@ -1,7 +1,7 @@
 # This script is used to preprocess the raw data from 450k and EPIC arrays.
+# For AnkeHuels_405K_EPIC data
 # Pull out the data of autosomes and get the beta values of CpG sites.
 # The output is a list of data frames, each of which contains the data of one chromosome.
-
 library(data.table)
 library(tidyverse)
 
@@ -9,8 +9,8 @@ library(tidyverse)
 chr_names <- paste0("chr", 1:22)
 
 # header of the data frame
-HM450_header <- fread("data/HM450_EPIC/colname_450K.txt") %>% colnames()
-EPIC_header <- fread("data/HM450_EPIC/colname_EPIC.txt") %>% colnames()
+HM450_header <- fread("data/AnkeHuels_405K_EPIC/HM450_EPIC/colname_450K.txt") %>% colnames()
+EPIC_header <- fread("data/AnkeHuels_405K_EPIC/HM450_EPIC/colname_EPIC.txt") %>% colnames()
 
 # valid samples
 HM450_header %>%
@@ -30,7 +30,7 @@ intersect(HM450_samples, EPIC_samples) -> common_samples
 # methylation data from 450k array (HumanMethylation450 BeadChip)
 HM450_data <- lapply(chr_names, function(chr) {
   cat("Reading 450k data of", chr, "\n")
-  fread(paste0("data/HM450_EPIC/HM450_", chr, ".txt")) %>%
+  fread(paste0("data/AnkeHuels_405K_EPIC/HM450_EPIC/HM450_", chr, ".txt")) %>%
     setnames(., HM450_header) %>%
     mutate(chr = chr)
 })
@@ -39,7 +39,7 @@ names(HM450_data) <- chr_names
 # methylation data from EPIC array
 EPIC_data <- lapply(chr_names, function(chr) {
   cat("Reading EPIC data of", chr, "\n")
-  fread(paste0("data/HM450_EPIC/EPIC_", chr, ".txt")) %>%
+  fread(paste0("data/AnkeHuels_405K_EPIC/HM450_EPIC/EPIC_", chr, ".txt")) %>%
     setnames(., EPIC_header) %>%
     mutate(chr = chr)
 })

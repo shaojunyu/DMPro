@@ -11,7 +11,8 @@ Illumina Infinium MethylationEPIC | EPIC | GPL21145 | 868,564 | Nov 16, 2015 | h
 Illumina Infinium MethylationEPIC version 2 | EPICv2 | GPL33022 | 937,691 | Jan 15, 2023 | https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GPL33022
 
 ## Data
-- 171 samples
+- 171 samples from Anke Huels (anke.huels@emory.edu) (405K and EPIC)
+- 123 samples from Alicia K. Smith (aksmit3@emory.edu) (450K and EPIC)
 - data are orginized by chromosomes
 
 ## Data for training autoencoder

@@ -1,3 +1,13 @@
+# implementatio of the PFR (penalized functional regression) method
+# ref: https://github.com/Leonardo0628/pfr
+# git clone https://github.com/Leonardo0628/pfr to tmp/pfr
+
+# This script is adapted from the pfr.R script in the pfr repository.
+# The original script is used to impute 450K data using 27K data.
+# Here we use it to impute EPIC data using 450K data.
+library(data.table)
+library(tidyverse)
+# source("tmp/pfr/refund_lib.R")
 
 # Meth<-data.frame(cbind(y$beta,t(X)))
 source("tmp/CUE/R/refund_lib.R")
