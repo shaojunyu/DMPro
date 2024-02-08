@@ -18,7 +18,7 @@ HM450_header %>%
   grep("_R.AVG_Beta", ., invert = T, value = T) %>%
   str_remove(".AVG_Beta") -> HM450_samples
 
-EPIC_header %>%
+EPIC_header %>% 
   grep("AVG_Beta", ., value = T) %>%
   str_replace("_Rep1", "") %>%
   grep("_Rep", ., invert = T, value = T) %>%
@@ -68,9 +68,10 @@ HM450_merged <- rbindlist(HM450_data) %>%
   setnames(., new = c("chr", "ID", "MAPINFO", common_samples))
 
 HM450_merged %>%
-# select(-chr, -MAPINFO) %>%
   drop_na() %>%
-  setkey(ID) -> HM450_merged
+  setkey(ID) %>%
+  arrange(chr, MAPINFO) -> HM450_merged
+HM450_merged[chr == "chr1"]$MAPINFO
 
 # write beta per chr
 lapply(unique(HM450_merged$chr), function(CHR){
@@ -83,7 +84,8 @@ EPIC_merged <- rbindlist(EPIC_data) %>%
   setnames(., new = c("chr", "ID", "MAPINFO", common_samples))
 EPIC_merged %>%
   drop_na() %>%
-  setkey(ID) -> EPIC_merged
+  setkey(ID) %>%
+  arrange(chr, MAPINFO) -> EPIC_merged
 lapply(unique(EPIC_merged$chr), function(CHR){
   print(CHR)
   EPIC_merged[chr == CHR] %>%
@@ -113,27 +115,27 @@ write.table(test_samples, "tmp/processed/test_samples.txt",
           quote = F,
           col.names = F)
 
-HM450_merged %>%
-  select(chr, ID, MAPINFO, all_of(train_samples)) %>%
-  fwrite("tmp/processed/HM450_train.csv")
-
-HM450_merged %>%
-  select(chr, ID, MAPINFO, all_of(val_samples)) %>%
-  fwrite("tmp/processed/HM450_val.csv")
-
-HM450_merged %>%
-  select(chr, ID, MAPINFO, all_of(test_samples)) %>%
-  fwrite("tmp/processed/HM450_test.csv")
-
-EPIC_merged %>%
-  select(chr, ID, MAPINFO, all_of(train_samples)) %>%
-  fwrite("tmp/processed/EPIC_train.csv")
-
-EPIC_merged %>%
-  select(chr, ID, MAPINFO, all_of(val_samples)) %>%
-  fwrite("tmp/processed/EPIC_val.csv")
-
-EPIC_merged %>%
-  select(chr, ID, MAPINFO, all_of(test_samples)) %>%
-  fwrite("tmp/processed/EPIC_test.csv")
+# HM450_merged %>%
+#   select(chr, ID, MAPINFO, all_of(train_samples)) %>%
+#   fwrite("tmp/processed/HM450_train.csv")
+# 
+# HM450_merged %>%
+#   select(chr, ID, MAPINFO, all_of(val_samples)) %>%
+#   fwrite("tmp/processed/HM450_val.csv")
+# 
+# HM450_merged %>%
+#   select(chr, ID, MAPINFO, all_of(test_samples)) %>%
+#   fwrite("tmp/processed/HM450_test.csv")
+# 
+# EPIC_merged %>%
+#   select(chr, ID, MAPINFO, all_of(train_samples)) %>%
+#   fwrite("tmp/processed/EPIC_train.csv")
+# 
+# EPIC_merged %>%
+#   select(chr, ID, MAPINFO, all_of(val_samples)) %>%
+#   fwrite("tmp/processed/EPIC_val.csv")
+# 
+# EPIC_merged %>%
+#   select(chr, ID, MAPINFO, all_of(test_samples)) %>%
+#   fwrite("tmp/processed/EPIC_test.csv")
 
