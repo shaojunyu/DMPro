@@ -71,3 +71,27 @@ lapply(unique(EPIC_beta$Chr), function(CHR){
     arrange(MAPINFO) %>%
     data.table::fwrite(file = sprintf("tmp/AliciaKSmith_450K_EPIC/EPIC_%s.csv", CHR))
 })
+
+
+# write training, test, val data of HM450, for the use of PFR
+HM450_beta %>%
+  select(Chr, ID, MAPINFO, all_of(train_samples)) %>%
+  arrange(Chr, MAPINFO) %>%
+  data.table::fwrite("tmp/AliciaKSmith_450K_EPIC/HM450_train.csv")
+
+HM450_beta %>%
+  select(Chr, ID, MAPINFO, all_of(val_samples)) %>%
+  arrange(Chr, MAPINFO) %>%
+  data.table::fwrite("tmp/AliciaKSmith_450K_EPIC/HM450_val.csv")
+
+HM450_beta %>%
+  select(Chr, ID, MAPINFO, all_of(test_samples)) %>%
+  arrange(Chr, MAPINFO) %>%
+  data.table::fwrite("tmp/AliciaKSmith_450K_EPIC/HM450_test.csv")
+
+
+
+
+
+
+
