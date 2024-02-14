@@ -7,6 +7,8 @@ library(tidyverse)
 EPIC_450K_sample <- openxlsx::read.xlsx(
   "data/AliciaKSmith_450K_EPIC/Steve_idats/EPICv1v2_sampleList.xlsx",
   sheet = 2)
+EPIC_450K_sample$Sample_Name <- 
+  paste0("S", EPIC_450K_sample$Sample_Name)
 
 HM450K_basenames <- 
   sprintf("data/AliciaKSmith_450K_EPIC/Steve_idats/450k_realSamples/%s",
