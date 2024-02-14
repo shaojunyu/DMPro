@@ -2,7 +2,7 @@
 # ref: https://github.com/GangLiTarheel/CUE
 library(data.table)
 library(tidyverse)
-options(mc.cores = 10)
+options(mc.cores = 4)
 options(ignore.interactive = TRUE)
 
 # load the training data, chr
@@ -15,8 +15,14 @@ if (length(args) == 1) {
 print(chr)
 # quit(save = "no")
 
-HM450 <- fread(sprintf("tmp/processed/HM450_chr%d.csv", chr))
-EPIC <- fread(sprintf("tmp/processed/EPIC_chr%d.csv", chr))
+# data_dir <- "tmp/AnkeHuels_405K_EPIC"
+# res_dir <- "res/AnkeHuels_405K_EPIC_baseline"
+
+data_dir <- args[2]
+res_dir <- args[3]
+
+HM450 <- fread(sprintf("%s/HM450_chr%d.csv", data_dir, chr))
+EPIC <- fread(sprintf("%s/EPIC_chr%d.csv", data_dir, chr))
 
 HM450 %>%
   drop_na() %>%
@@ -31,9 +37,9 @@ EPIC %>%
   filter(ID %in% setdiff(EPIC$ID, HM450$ID)) -> EPIC
 # sum(EPIC$ID %in% HM450$ID)
 
-train_samples <- read.csv("tmp/processed/train_samples.txt", header = F)$V1
-val_samples <- read.csv("tmp/processed/val_samples.txt", header = F)$V1
-test_samples <- read.csv("tmp/processed/test_samples.txt", header = F)$V1
+train_samples <- read.csv(sprintf("%s/train_samples.txt", data_dir), header = F)$V1
+val_samples <- read.csv(sprintf("%s/val_samples.txt", data_dir), header = F)$V1
+test_samples <- read.csv(sprintf("%s/test_samples.txt", data_dir), header = F)$V1
 
 # for each probe in EPIC, find the upstream and downstream 25 probes in HM450,
 # use the 25 probes to impute the EPIC probe
@@ -125,8 +131,8 @@ pred_rf_res <- rbindlist(pred_rf)
 # RMSE
 sqrt(mean((pred_rf_res$pred_rf - pred_rf_res$y)^2))
 saveRDS(pred_rf_res,
-        sprintf("res/CUE/pred_rf_res_chr%s.rds", chr))
-quit(save = "no")
+        sprintf("%s/pred_rf_res_chr%s.rds", res_dir, chr))
+# quit(save = "no")
 
 ############################### xgboost ########################################
 library(xgboost)
@@ -155,7 +161,7 @@ pred_xgb_res <- rbindlist(pred_xgb_test)
 # # RMSE
 sqrt(mean((pred_xgb_res$pred_xgb - pred_xgb_res$y)^2))
 saveRDS(pred_xgb_res,
-        sprintf("res/CUE/pred_xgb_res_chr%s.rds", chr))
+        sprintf("%s/pred_xgb_res_chr%s.rds", res_dir, chr))
 
 
 ############################# KNN ######################################
@@ -180,7 +186,7 @@ pred_knn_res <- rbindlist(pred_knn)
 # RMSE
 sqrt(mean((pred_knn_res$pred_knn - pred_knn_res$y)^2))
 saveRDS(pred_knn_res,
-        sprintf("res/CUE/pred_knn_res_chr%s.rds", chr))
+        sprintf("%s/pred_knn_res_chr%s.rds", res_dir, chr))
 
 ############################# logistic regression ######################
 cat("logistic regression\n")
@@ -207,11 +213,11 @@ pred_glm_res <- rbindlist(pred_glm)
 # RMSE
 sqrt(mean((pred_glm_res$pred_glm - pred_glm_res$y)^2))
 saveRDS(pred_glm_res,
-        sprintf("res/CUE/pred_glm_res_chr%s.rds", chr))
+        sprintf("%s/pred_glm_res_chr%s.rds", res_dir, chr))
 
 ############################# PFR ######################################
 cat("PFR\n")
-source("src/CUE/CUE_PFR.R")
+source("src/CUE/PFR.R")
 
 # K = 4
 # pred_CUE_equal_weighs <- 1/ K * (pred_Logistic_test + pred_KNN_test + pred_RF_test + pred_PFR_test)

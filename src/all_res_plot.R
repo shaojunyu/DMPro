@@ -1,9 +1,9 @@
 library(tidyverse)
 library(data.table)
 
-train_samples <- read.csv("tmp/processed/train_samples.txt", header = F)$V1
-test_samples <- read.csv("tmp/processed/test_samples.txt", header = F)$V1
-val_samples <- read.csv("tmp/processed/val_samples.txt", header = F)$V1
+train_samples <- read.csv("tmp/AnkeHuels_405K_EPIC/train_samples.txt", header = F)$V1
+test_samples <- read.csv("tmp/AnkeHuels_405K_EPIC/test_samples.txt", header = F)$V1
+val_samples <- read.csv("tmp/AnkeHuels_405K_EPIC/val_samples.txt", header = F)$V1
 
 # read data for each chr
 options(mc.cores = 22)
@@ -18,8 +18,8 @@ pbmcapply::pbmclapply(1:22, function(chr){
   cue_res <- readRDS(sprintf("res/CUE/pred_cue_res_chr%s.rds", chr))
   
   # read data
-  EPIC <- fread(sprintf("tmp/processed/EPIC_chr%s.csv", chr)) %>% drop_na()
-  HM450 <- fread(sprintf("tmp/processed/HM450_chr%s.csv", chr)) %>% drop_na()
+  EPIC <- fread(sprintf("tmp/AnkeHuels_405K_EPIC/EPIC_chr%s.csv", chr)) %>% drop_na()
+  HM450 <- fread(sprintf("tmp/AnkeHuels_405K_EPIC/HM450_chr%s.csv", chr)) %>% drop_na()
   setkey(EPIC, ID)
   setkey(HM450, ID)
   
@@ -120,52 +120,128 @@ decoded %>%
   theme_bw() + ggtitle("Density of imputed and observed values (AFB045)") +
   theme(axis.title = element_text(size = 14),
         axis.text = element_text(size = 12),
-        legend.position = "none") 
-export::graph2png(last_plot(),
-                  "res/decoded_density.png",
-                  width = 6, height = 4)
+        legend.position = "none")
+# export::graph2png(last_plot(),
+#                   "res/decoded_density.png",
+#                   width = 6, height = 4)
 
 # RMSE for each sample
 shared %>%
-  group_by(sample) %>%
+  group_by(sample, chr) %>%
   summarise(Shared_RMSE = sqrt(mean((EPIC - HM450)^2))) -> shared_rmse
 
 decoded %>%
-  group_by(sample) %>%
+  group_by(sample, chr) %>%
   summarise(Our_RMSE = sqrt(mean((y - pred)^2))) -> decoded_rmse
 
 cue_res %>%
-  group_by(sample) %>%
+  group_by(sample, chr) %>%
   replace_na(list(pred_cue = 0)) %>%
-  summarise(CUE_RMSE = sqrt(mean((y - pred_cue)^2))) -> cue_res
+  summarise(CUE_RMSE = sqrt(mean((y - pred_cue)^2))) -> cue_rmse
 
 xgb_res %>%
-  group_by(sample) %>%
+  group_by(sample, chr) %>%
   replace_na(list(pred_xgb = 0)) %>%
   summarise(XGBoost_RMSE = sqrt(mean((y - pred_xgb)^2))) -> xgb_rmse
 
 rf_res %>%
-  group_by(sample) %>%
+  group_by(sample, chr) %>%
   replace_na(list(pred_rf = 0)) %>%
   summarise(RF_RMSE = sqrt(mean((y - pred_rf)^2))) -> RF_rmse
 
 knn_res %>%
-  group_by(sample) %>%
+  group_by(sample, chr) %>%
   replace_na(list(pred_knn = 0)) %>%
   summarise(KNN_RMSE = sqrt(mean((y - pred_knn)^2))) -> KNN_rmse
 
 pfr_res %>%
-  group_by(sample) %>%
+  group_by(sample, chr) %>%
   na.omit() %>%
   summarise(PFR_RMSE = sqrt(mean((y - pred_PFR)^2))) -> PFR_rmse
 
 shared_rmse %>%
-  left_join(decoded_rmse, by = "sample") %>%
-  left_join(cue_res, by = "sample") %>%
-  left_join(xgb_rmse, by = "sample") %>%
-  left_join(RF_rmse, by = "sample") %>%
-  left_join(KNN_rmse, by = "sample") %>%
-  left_join(PFR_rmse, by = "sample") -> rmse_res
+  left_join(decoded_rmse, by = c("sample", "chr")) %>%
+  left_join(cue_rmse, by = c("sample", "chr")) %>%
+  left_join(xgb_rmse, by = c("sample", "chr")) %>%
+  left_join(RF_rmse, by = c("sample", "chr")) %>%
+  left_join(KNN_rmse, by = c("sample", "chr")) %>%
+  left_join(PFR_rmse, by = c("sample", "chr")) -> rmse_res
+
+write.csv(rmse_res, "res/rmse_res.csv", row.names = FALSE)
+
+# boxplot of RMSE, by chr
+lapply(unique(rmse_res$chr), function(x) {
+  rmse_res %>%
+    filter(chr == x) %>%
+    gather(method, RMSE, -sample, -chr) %>%
+    mutate(method = str_remove(method, "_RMSE")) %>%
+    mutate(method = factor(method, levels = rev(c("Shared", "Our", "CUE", "XGBoost", "RF", "KNN", "PFR")))) %>%
+    ggplot(aes(x = method, y = RMSE)) +
+    geom_boxplot() +
+    theme_classic() + xlab("") +
+    ggtitle(paste0("Chr ", x)) +
+    theme(axis.text.x = element_text(color = "black", face = "bold",
+                                     size = 12),
+          axis.text.y = element_text(size = 12, color = "black"))
+  export::graph2pdf(last_plot(),
+                    paste0("res/rmse_plot/chr", x, "_rmse_boxplot.pdf"),
+                    width = 6, height = 4)
+  # barplot of RMSE
+  rmse_res %>%
+    filter(chr == x) %>%
+    gather(method, RMSE, -sample, -chr) %>%
+    mutate(method = str_remove(method, "_RMSE")) %>%
+    mutate(method = factor(method, levels = rev(c("Shared", "Our", "CUE", "XGBoost", "RF", "KNN", "PFR")))) %>%
+    group_by(method) %>%
+    summarise(RMSE = mean(RMSE)) -> bar_rmse
+  bar_rmse %>%
+    ggplot(aes(x = method, y = RMSE)) +
+    geom_bar(fill = "steelblue",
+             stat = "identity", 
+             width = 0.6) +
+    geom_text(aes(label = round(RMSE, 4)), color = "black", 
+              fontface = "bold",
+              size = 4.5,
+              vjust = -0.2) +
+    geom_hline(yintercept = bar_rmse$RMSE[bar_rmse$method == "Our"],
+               linetype = "dashed", color = "red") +
+    scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+    theme_bw() + xlab("") + ylab("RMSE") +
+    ggtitle(paste0("Chr ", x)) +
+    theme(axis.text.x = element_text(color = "black", face = "bold",
+                                     size = 12),
+          axis.text.y = element_text(size = 12, color = "black"),
+          legend.position = "none")
+  export::graph2pdf(last_plot(),
+                    paste0("res/rmse_plot/chr", x, "_rmse_barplot.pdf"),
+                    width = 7, height = 4)
+}) -> rmse_plots
+
+rmse_res %>%
+  filter(chr == 2) %>%
+  gather(method, RMSE, -sample, -chr) %>%
+  mutate(method = str_remove(method, "_RMSE")) %>%
+  mutate(method = factor(method, levels = rev(c("Shared", "Our", "CUE", "XGBoost", "RF", "KNN", "PFR")))) %>%
+  group_by(method) %>%
+  summarise(RMSE = mean(RMSE)) -> bar_rmse
+bar_rmse %>%
+  ggplot(aes(x = method, y = RMSE)) +
+  geom_bar(fill = "steelblue",
+           stat = "identity", 
+           width = 0.6) +
+  geom_text(aes(label = round(RMSE, 4)), color = "black", 
+            fontface = "bold",
+            size = 4.5,
+            vjust = -0.3) +
+  geom_hline(yintercept = bar_rmse$RMSE[bar_rmse$method == "Our"],
+             linetype = "dashed", color = "red") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+  theme_bw() + xlab("") + ylab("RMSE") +
+  theme(axis.text.x = element_text(color = "black", face = "bold",
+                                   size = 12),
+        axis.text.y = element_text(size = 12, color = "black"),
+        legend.position = "none")
+
 
 # boxplot of RMSE
 rmse_res %>%
@@ -202,9 +278,9 @@ rmse_res %>%
         legend.position = "none") -> p2
 library(patchwork)
 p1 + p2
-export::graph2png(last_plot(),
-                  "res/rmse.png",
-                  width = 14, height = 6)
+# export::graph2png(last_plot(),
+#                   "res/rmse.png",
+#                   width = 14, height = 6)
 
 library(ggpubr)
 decoded %>%
@@ -220,9 +296,9 @@ decoded %>%
   ggtitle("AFB045") +
   theme_bw() 
   # facet_wrap(~sample, ncol = 4)
-export::graph2png(last_plot(),
-                  "res/decoded_scatter.png",
-                  width = 4, height = 4.1)
+# export::graph2png(last_plot(),
+#                   "res/decoded_scatter.png",
+#                   width = 4, height = 4.1)
 
 # show the correlation between the predicted and the true values
 decoded %>%

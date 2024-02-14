@@ -12,9 +12,9 @@ library(tidyverse)
 # Meth<-data.frame(cbind(y$beta,t(X)))
 source("tmp/CUE/R/refund_lib.R")
 
-X_450_train <- fread("tmp/processed/HM450_train.csv")
-X_450_test <- fread("tmp/processed/HM450_test.csv")
-X_450_val <- fread("tmp/processed/HM450_val.csv")
+X_450_train <- fread(sprintf("%s/HM450_train.csv", data_dir))
+X_450_test <- fread(sprintf("%s/HM450_test.csv", data_dir))
+X_450_val <- fread(sprintf("%s/HM450_val.csv", data_dir))
 
 ID = X_450_train$ID
 all(X_450_train$ID == X_450_test$ID)
@@ -100,4 +100,4 @@ pred_pfr_res <- rbindlist(pred_pfr[!is.na(pred_pfr)])
 #RMSE
 sqrt(mean((pred_pfr_res$pred_PFR - pred_pfr_res$y)^2))
 saveRDS(pred_pfr_res,
-        sprintf("res/CUE/pred_pfr_res_chr%s.rds", chr))
+        sprintf("%s/pred_pfr_res_chr%s.rds", res_dir, chr))
