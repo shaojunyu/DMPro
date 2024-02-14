@@ -7,17 +7,17 @@ options(ignore.interactive = TRUE)
 
 # load the training data, chr
 args = commandArgs(trailingOnly=TRUE)
-if (length(args) == 1) {
-  chr <- as.numeric(args[1])
-} else{
-  chr <- 20
-}
-print(chr)
+# if (length(args) == 1) {
+#   chr <- as.numeric(args[1])
+# } else{
+#   chr <- 20
+# }
+# print(chr)
 # quit(save = "no")
 
 # data_dir <- "tmp/AnkeHuels_405K_EPIC"
 # res_dir <- "res/AnkeHuels_405K_EPIC_baseline"
-
+chr <- as.numeric(args[1])
 data_dir <- args[2]
 res_dir <- args[3]
 
