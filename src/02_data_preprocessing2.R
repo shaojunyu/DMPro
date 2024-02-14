@@ -85,5 +85,5 @@ rownames(EPIC_beta)
 EPIC_annotation
 HM450K_annotation
 class(EPIC_annotation)
-data.table::fwrite(as.data.frame(EPIC_annotation), "data/AliciaKSmith_450K_EPIC/HM450K_annotation.csv")
-data.table::fwrite(as.data.frame(HM450K_annotation), "data/AliciaKSmith_450K_EPIC/EPIC_annotation.csv")
+data.table::fwrite(as.data.frame(HM450K_annotation), "data/AliciaKSmith_450K_EPIC/HM450K_annotation.csv")
+data.table::fwrite(as.data.frame(EPIC_annotation), "data/AliciaKSmith_450K_EPIC/EPIC_annotation.csv")
