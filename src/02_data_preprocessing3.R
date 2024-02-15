@@ -39,17 +39,17 @@ colnames(HM450K_annotation)
 autosomes <- paste0("chr", 1:22)
 HM450K_annotation %>%
   select(chr, Name, pos) %>%
-  rename(Chr = chr, ID = Name, MAPINFO = pos) -> HM450K_annotation
+  rename(ID = Name, MAPINFO = pos) -> HM450K_annotation
 HM450_beta %>%
   left_join(HM450K_annotation, by = "ID") %>%
-  select(Chr, ID, MAPINFO, everything()) %>%
-  arrange(Chr, MAPINFO) %>%
-  filter(Chr %in% autosomes) -> HM450_beta
+  select(chr, ID, MAPINFO, everything()) %>%
+  arrange(chr, MAPINFO) %>%
+  filter(chr %in% autosomes) -> HM450_beta
 
 # write beta per chr
-lapply(unique(HM450_beta$Chr), function(CHR){
+lapply(unique(HM450_beta$chr), function(CHR){
   print(CHR)
-  HM450_beta[Chr == CHR] %>%
+  HM450_beta[chr == CHR] %>%
     arrange(MAPINFO) %>%
     data.table::fwrite(file = sprintf("tmp/AliciaKSmith_450K_EPIC/HM450_%s.csv", CHR))
 })
@@ -57,17 +57,17 @@ lapply(unique(HM450_beta$Chr), function(CHR){
 colnames(EPIC_annotation)
 EPIC_annotation %>%
   select(chr, Name, pos) %>%
-  rename(Chr = chr, ID = Name, MAPINFO = pos) -> EPIC_annotation
+  rename(ID = Name, MAPINFO = pos) -> EPIC_annotation
 EPIC_beta %>%
   left_join(EPIC_annotation, by = "ID") %>%
-  select(Chr, ID, MAPINFO, everything()) %>%
-  arrange(Chr, MAPINFO) %>%
-  filter(Chr %in% autosomes) -> EPIC_beta
+  select(chr, ID, MAPINFO, everything()) %>%
+  arrange(chr, MAPINFO) %>%
+  filter(chr %in% autosomes) -> EPIC_beta
 
 # save the data
-lapply(unique(EPIC_beta$Chr), function(CHR){
+lapply(unique(EPIC_beta$chr), function(CHR){
   print(CHR)
-  EPIC_beta[Chr == CHR] %>%
+  EPIC_beta[chr == CHR] %>%
     arrange(MAPINFO) %>%
     data.table::fwrite(file = sprintf("tmp/AliciaKSmith_450K_EPIC/EPIC_%s.csv", CHR))
 })
@@ -75,18 +75,18 @@ lapply(unique(EPIC_beta$Chr), function(CHR){
 
 # write training, test, val data of HM450, for the use of PFR
 HM450_beta %>%
-  select(Chr, ID, MAPINFO, all_of(train_samples)) %>%
-  arrange(Chr, MAPINFO) %>%
+  select(chr, ID, MAPINFO, all_of(train_samples)) %>%
+  arrange(chr, MAPINFO) %>%
   data.table::fwrite("tmp/AliciaKSmith_450K_EPIC/HM450_train.csv")
 
 HM450_beta %>%
-  select(Chr, ID, MAPINFO, all_of(val_samples)) %>%
-  arrange(Chr, MAPINFO) %>%
+  select(chr, ID, MAPINFO, all_of(val_samples)) %>%
+  arrange(chr, MAPINFO) %>%
   data.table::fwrite("tmp/AliciaKSmith_450K_EPIC/HM450_val.csv")
 
 HM450_beta %>%
-  select(Chr, ID, MAPINFO, all_of(test_samples)) %>%
-  arrange(Chr, MAPINFO) %>%
+  select(chr, ID, MAPINFO, all_of(test_samples)) %>%
+  arrange(chr, MAPINFO) %>%
   data.table::fwrite("tmp/AliciaKSmith_450K_EPIC/HM450_test.csv")
 
 
