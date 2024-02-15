@@ -1,7 +1,7 @@
 # implementatio of the PFR (penalized functional regression) method
 # ref: https://github.com/Leonardo0628/pfr
 # git clone https://github.com/Leonardo0628/pfr to tmp/pfr
-
+# git clone https://github.com/GangLiTarheel/CUE to tmp/CUE
 # This script is adapted from the pfr.R script in the pfr repository.
 # The original script is used to impute 450K data using 27K data.
 # Here we use it to impute EPIC data using 450K data.
@@ -63,14 +63,15 @@ annotation.EPIC <- annotation.EPIC[!duplicated(annotation.EPIC$Name),]
 row.names(annotation.EPIC) <- annotation.EPIC$Name
 annotation.EPIC <- annotation.EPIC[predictors$ID,]
 
-pbmcapply::pbmclapply(EPIC$ID, function(target_probe){
+lapply(EPIC$ID[1:100], function(target_probe){
   # print(target_probe)
-  # target_probe <- "cg00000974"
-  # target_probe <- x
   generate_data(target_probe, EPIC, HM450, predictors) -> tmp
   x <- tmp[[1]]
   y <- tmp[[2]]
   Y=log2(y$beta/(1-y$beta))
+  # prevent 0 and 1
+  x[x == 0] <- 0.000001
+  x[x == 1] <- 0.9999999
   X=t(log2(x/(1-x)))
   j <- paste(annotation.EPIC[target_probe, "Relation_to_UCSC_CpG_Island"])
   if (j == "") {

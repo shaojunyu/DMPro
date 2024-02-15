@@ -14,9 +14,10 @@ args = commandArgs(trailingOnly=TRUE)
 # }
 # print(chr)
 # quit(save = "no")
+chr <- 8
+data_dir <- "tmp/AliciaKSmith_450K_EPIC/"
+res_dir <- "res/AliciaKSmith_450K_EPIC_baseline/"
 
-# data_dir <- "tmp/AnkeHuels_405K_EPIC"
-# res_dir <- "res/AnkeHuels_405K_EPIC_baseline"
 chr <- as.numeric(args[1])
 data_dir <- args[2]
 res_dir <- args[3]
