@@ -94,6 +94,9 @@ lapply(unique(EPIC_merged$chr), function(CHR){
     fwrite(file = sprintf("tmp/AnkeHuels_405K_EPIC/EPIC_%s.csv", CHR))
 })
 
+data.table::fwrite(HM450_merged, "data/AnkeHuels_405K_EPIC/HM450_beta.csv")
+data.table::fwrite(EPIC_merged, "data/AnkeHuels_405K_EPIC/EPIC_beta.csv")
+
 # split samples into train, val, test
 # train: 80%, val: 10%, test: 10%
 set.seed(123)
