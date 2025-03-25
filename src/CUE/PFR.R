@@ -12,9 +12,18 @@ library(tidyverse)
 # Meth<-data.frame(cbind(y$beta,t(X)))
 source("tmp/CUE/R/refund_lib.R")
 
-X_450_train <- fread(sprintf("%s/HM450_train.csv", data_dir))
-X_450_test <- fread(sprintf("%s/HM450_test.csv", data_dir))
-X_450_val <- fread(sprintf("%s/HM450_val.csv", data_dir))
+if(imputation_type == "HM450_EPIC"){
+  X_450_train <- fread(sprintf("%s/HM450_train.csv", data_dir))
+  X_450_test <- fread(sprintf("%s/HM450_test.csv", data_dir))
+  X_450_val <- fread(sprintf("%s/HM450_val.csv", data_dir))
+}
+
+if(imputation_type == "EPIC_V1_V2"){
+  X_450_train <- fread(sprintf("%s/EPIC_V1_train.csv", data_dir))
+  X_450_test <- fread(sprintf("%s/EPIC_V1_test.csv", data_dir))
+  X_450_val <- fread(sprintf("%s/EPIC_V1_val.csv", data_dir))
+}
+
 
 ID = X_450_train$ID
 all(X_450_train$ID == X_450_test$ID)
@@ -29,10 +38,20 @@ train_idx <- which(colnames(X_450) %in% train_samples)
 test_samples <- c(test_samples, val_samples)
 test_idx <- which(colnames(X_450) %in% test_samples)
 
-annotation.450K <- fread(cmd = 'grep -v ^# data/annotations/GPL13534\\(450K\\)-11288.txt') %>%
- as.data.frame()
-rownames(annotation.450K) <- annotation.450K$ID
-annotation.450K <- annotation.450K[ID,]
+if(imputation_type == "HM450_EPIC"){
+  annotation.450K <- fread(cmd = 'grep -v ^# data/annotations/GPL13534\\(450K\\)-11288.txt') %>%
+    as.data.frame()
+  rownames(annotation.450K) <- annotation.450K$ID
+  annotation.450K <- annotation.450K[ID,]
+}
+
+if(imputation_type == "EPIC_V1_V2"){
+  annotation.450K <- fread(cmd = 'grep -v ^# data/annotations/GPL33022\\(EPICv2\\)-233683.txt') %>%
+    as.data.frame()
+  rownames(annotation.450K) <- annotation.450K$ID
+  annotation.450K <- annotation.450K[ID,]
+}
+
 rownames(X_450) <- rownames(annotation.450K)
 X_450 = log2(X_450/(1-X_450))
 
@@ -56,14 +75,14 @@ for (l in isl_group) {
   train.funcs[[j]] <- apply(train.dens[[j]], 2, function(x) {density(x,from=-13.38757,to=13.38757)$y})   
 }
 
-
+# data/annotations/GPL23976(850K)-56952.txt
 annotation.EPIC <- fread(cmd = 'grep -v ^# data/annotations/GPL33022\\(EPICv2\\)-233683.txt') %>%
   as.data.frame()
 annotation.EPIC <- annotation.EPIC[!duplicated(annotation.EPIC$Name),]
 row.names(annotation.EPIC) <- annotation.EPIC$Name
 annotation.EPIC <- annotation.EPIC[predictors$ID,]
 
-lapply(EPIC$ID[1:100], function(target_probe){
+lapply(EPIC$ID, function(target_probe){
   # print(target_probe)
   generate_data(target_probe, EPIC, HM450, predictors) -> tmp
   x <- tmp[[1]]

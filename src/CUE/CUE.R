@@ -2,28 +2,42 @@ library(tidyverse)
 library(data.table)
 
 # load the training data, chr
-# args = commandArgs(trailingOnly=TRUE)
+args = commandArgs(trailingOnly=TRUE)
 # if (length(args) == 1) {
 #   chr <- as.numeric(args[1])
 # } else{
-#   chr <- 20
+  
 # }
 
-pfr_res <- readRDS(sprintf("%s/pred_pfr_res_chr%s.rds", res_dir, chr))
-glm_res <- readRDS(sprintf("%s/pred_glm_res_chr%s.rds", res_dir, chr))
-knn_res <- readRDS(sprintf("%s/pred_knn_res_chr%s.rds", res_dir, chr))
-rf_res <- readRDS(sprintf("%s/pred_rf_res_chr%s.rds", res_dir, chr))
-xgb_res <- readRDS(sprintf("%s/pred_xgb_res_chr%s.rds", res_dir, chr))
+chr <- 20
+# data_dir <- "tmp/AnkeHuels_405K_EPIC/"
+# baseline_dir <- "res/AnkeHuels_405K_EPIC_baseline/"
+data_dir <- "tmp/EPIC_V1_V2/"
+baseline_dir <- "res/EPIC_V1_V2_baseline/"
 
-# train_samples <- read.csv("tmp/processed/train_samples.txt", header = F)$V1
-# test_samples <- read.csv("tmp/processed/test_samples.txt", header = F)$V1
-# val_samples <- read.csv("tmp/processed/val_samples.txt", header = F)$V1
+chr <- as.numeric(args[1])
+data_dir <- args[2]
+baseline_dir <- args[3]
+
+pfr_res <- readRDS(sprintf("%s/pred_pfr_res_chr%s.rds", baseline_dir, chr))
+glm_res <- readRDS(sprintf("%s/pred_glm_res_chr%s.rds", baseline_dir, chr))
+knn_res <- readRDS(sprintf("%s/pred_knn_res_chr%s.rds", baseline_dir, chr))
+rf_res <- readRDS(sprintf("%s/pred_rf_res_chr%s.rds", baseline_dir, chr))
+xgb_res <- readRDS(sprintf("%s/pred_xgb_res_chr%s.rds", baseline_dir, chr))
+
+train_samples <- read.csv(paste0(data_dir, "/train_samples.txt"), header = F)$V1
+test_samples <- read.csv(paste0(data_dir, "/test_samples.txt"), header = F)$V1
+val_samples <- read.csv(paste0(data_dir, "/val_samples.txt"), header = F)$V1
 
 # read data
-# EPIC <- fread(sprintf("tmp/processed/EPIC_chr%s.csv", res_dir, chr)) %>% drop_na()
-# HM450 <- fread(sprintf("tmp/processed/HM450_chr%s.csv", res_dir, chr)) %>% drop_na()
-# setkey(EPIC, ID)
-# setkey(HM450, ID)
+EPIC <- fread(sprintf("%s/EPIC_chr%s.csv", data_dir, chr)) %>% drop_na()
+HM450 <- fread(sprintf("%s/HM450_chr%s.csv", data_dir, chr)) %>% drop_na()
+
+EPIC <- fread(sprintf("%s/EPIC_V1_chr%s.csv", data_dir, chr)) %>% drop_na()
+HM450 <- fread(sprintf("%s/EPIC_V2_chr%s.csv", data_dir, chr)) %>% drop_na()
+
+setkey(EPIC, ID)
+setkey(HM450, ID)
 
 # get the epic-specific probes
 setdiff(EPIC$ID, HM450$ID) -> epic_specific
@@ -60,7 +74,8 @@ cue_res %>%
                                   ifelse(min_col == "rf", pred_rf, pred_PFR)))) %>%
   select(probe, pred_cue, y.x, sample, type) %>%
   rename(y = y.x) -> cue_res
-saveRDS(cue_res, sprintf("%s/pred_cue_res_chr%s.rds", res_dir, chr))
+
+saveRDS(cue_res, sprintf("%s/pred_cue_res_chr%s.rds", baseline_dir, chr))
 
 # cbind(cue_res$pred_knn, cue_res$pred_xgb, cue_res$pred_rf) %>%
 #   rowMeans(na.rm = T) -> cue_res$pred_cue

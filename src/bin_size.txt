@@ -1,0 +1,1 @@
+platform,chr,bin_size,step_size

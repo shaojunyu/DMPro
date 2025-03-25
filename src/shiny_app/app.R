@@ -1,21 +1,13 @@
 library(shiny)
 library(shinythemes)
 library(tidyverse)
+library(DT)
+
 # probe <- head(epic, 100)
 # saveRDS(probe, "probe.rds")
 # Function to generate mock methylation data
 # probe <- readRDS("probe.rds")
 print(getwd())
-generateMockData <- function(rows = 100) {
-  set.seed(123)  # For reproducibility
-  data.frame(
-    SampleID = paste("Sample1"),
-    ID = str_split(probe$ID, "_", simplify = T)[,1],
-    # CpG_Island = sample(c("Island", "Shore", "Shelf", "OpenSea"), rows, replace = TRUE),
-    CpG_Island = probe$Relation_to_UCSC_CpG_Island,
-    Methylation_Level = rbeta(rows, 1, 2)
-  )
-}
 
 # Define UI with icons and custom CSS
 ui <- fluidPage(
@@ -47,18 +39,30 @@ ui <- fluidPage(
                   choices = c("Whole blood", "Peripheral blood", "Cortex")),
       selectInput("diseaseStatus", "Disease Status", 
                   choices = c("NA" = "Healthy", "Diseased" = "Cancer")),
+      # start imputation button, enabled when file is uploaded
+      shinyjs::useShinyjs(),
+      actionButton("Start imputation", "Start Imputation",
+                   class = "btn-primary", disabled = T),
+      # placeholder for imputation button
+      
+      
+      
+      # add vertical space
+      tags$hr(),
       downloadButton('downloadSample', 'Download Sample Input', class = "btn-info",
                      icon = icon("download"))
     ),
     mainPanel(
       tabsetPanel(
         tabPanel("Status", icon = icon("info-circle"), textOutput("status")),
+        tabPanel("Uploaded Data", icon = icon("file"), 
+                 DT::dataTableOutput("dataPreview")),
         tabPanel("Results Preview", icon = icon("table"),
                  div(class = "flex-container",
                      div(class = "download-button",
                          downloadButton('downloadData', 'Download Results', class = "btn-primary",
                                         icon = icon("file-download"))),
-                     tableOutput("dataPreview")
+                     tableOutput("resultPreview")
                  )
         ),
         id = "mainTabset"
@@ -69,20 +73,34 @@ ui <- fluidPage(
 
 # Define server logic
 server <- function(input, output) {
+  
+  # check if file is uploaded, enable imputation button
+  observe({
+    shinyjs::toggleState("Start imputation", !is.null(input$file1))
+  })
+  
+  # event handler for imputation button
+  observeEvent(input[["Start imputation"]], {
+    # Placeholder for imputation logic
+    print("Imputation started")
+  })
+  
   output$status <- renderText({
     if (is.null(input$file1)) {
       return("Awaiting data...")
     }
-    paste("Data uploaded. Processing for", input$tissueType, "with", input$diseaseStatus, "status.")
+    paste("Data uploaded. Processing for", 
+          input$tissueType, "with", 
+          input$diseaseStatus, "status.",
+          input$file1$datapath)
   })
   
-  output$dataPreview <- renderTable({
-    # if (is.null(input$file1)) {
-    #   return(generateMockData())
-    # }
-    return(generateMockData())
-    # Placeholder for actual file processing
-  }, digits = 4, hover = T)
+  output$dataPreview <- renderDataTable({
+    if (is.null(input$file1)) {
+      return(NULL)
+    }
+    read.table(input$file1$datapath, sep = ",", header = T)
+  })
   
   output$downloadData <- downloadHandler(
     filename = function() {
@@ -95,10 +113,10 @@ server <- function(input, output) {
   
   output$downloadSample <- downloadHandler(
     filename = function() {
-      paste("sample_data_", Sys.Date(), ".csv", sep = "")
+      "HM450K_chr20_test_data.csv"
     },
     content = function(file) {
-      write.csv(generateMockData(), file, row.names = FALSE)
+      file.copy("test_data_for_shiny.csv", file)
     }
   )
 }

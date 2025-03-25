@@ -3,14 +3,6 @@ library(data.table)
 library(ggpubr)
 library(ggsci)
 
-data_dir <- "tmp/AnkeHuels_405K_EPIC/"
-baseline_dir <- "res/AnkeHuels_405K_EPIC_baseline/"
-decoded_dir <- "res/AnkeHuels_405K_EPIC_decoded/"
-
-data_dir <- "tmp/AliciaKSmith_450K_EPIC/"
-baseline_dir <- "res/AliciaKSmith_450K_EPIC_baseline/"
-decoded_dir <- "res/AliciaKSmith_450K_EPIC_decoded/"
-
 data_dir <- "tmp/EPIC_V1_V2/"
 baseline_dir <- "res/EPIC_V1_V2_baseline/"
 decoded_dir <- "res/EPIC_V1_V2_decoded/"
@@ -21,8 +13,8 @@ val_samples <- read.csv(paste0(data_dir, "/val_samples.txt"), header = F)$V1
 
 # read data for each chr
 options(mc.cores = 22)
-pbmcapply::pbmclapply(1:22, function(chr){
-  chr <- 20
+pbmcapply::pbmclapply(20:20, function(chr){
+  # chr <- 20
   print(chr)
   pfr_res <- readRDS(sprintf("%s/pred_pfr_res_chr%s.rds", baseline_dir, chr))
   glm_res <- readRDS(sprintf("%s/pred_glm_res_chr%s.rds", baseline_dir, chr))
@@ -32,8 +24,8 @@ pbmcapply::pbmclapply(1:22, function(chr){
   cue_res <- readRDS(sprintf("%s/pred_cue_res_chr%s.rds",baseline_dir, chr))
   
   # read data
-  EPIC <- fread(sprintf("%s/EPIC_chr%s.csv", data_dir, chr)) %>% drop_na()
-  HM450 <- fread(sprintf("%s/HM450_chr%s.csv", data_dir, chr)) %>% drop_na()
+  EPIC <- fread(sprintf("%s/EPIC_V2_chr%s.csv", data_dir, chr)) %>% drop_na()
+  HM450 <- fread(sprintf("%s/EPIC_V1_chr%s.csv", data_dir, chr)) %>% drop_na()
   setkey(EPIC, ID)
   setkey(HM450, ID)
   
@@ -58,8 +50,8 @@ pbmcapply::pbmclapply(1:22, function(chr){
   shared <- epic_shared %>%
     left_join(hm450_shared, by = c("probe", "sample"))
   shared$chr <- chr
-
-  decoded <- fread(sprintf("%s/chr%s_decoded.csv", decoded_dir, chr)) %>% drop_na()
+  
+  decoded <- fread(sprintf("%s/chr%s_decoded_new.csv", decoded_dir, chr)) %>% drop_na()
   setkey(decoded, probe)
   decoded <- decoded[EPIC$ID]
   decoded %>% pivot_longer(cols = -probe,
@@ -108,7 +100,8 @@ pbmcapply::pbmclapply(1:22, function(chr){
        rf_res = rf_res,
        xgb_res = xgb_res,
        cue_res = cue_res)
-}) -> res
+
+  }) -> res
 
 decoded <- bind_rows(lapply(res, function(x) x$decoded))
 shared <- bind_rows(lapply(res, function(x) x$shared))
@@ -405,7 +398,7 @@ decoded %>%
   stat_cor(digits = 4) +
   ggtitle("AFB045") +
   theme_bw()
-  # facet_wrap(~sample, ncol = 4)
+# facet_wrap(~sample, ncol = 4)
 # export::graph2png(last_plot(),
 #                   "res/decoded_scatter.png",
 #                   width = 4, height = 4.1)

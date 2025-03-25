@@ -50,7 +50,7 @@ knn_res <- readRDS("res/CUE/pred_knn_res.rds")
 rf_res <- readRDS("res/CUE/pred_rf_res.rds")
 xgb_res <- readRDS("res/CUE/pred_xgb_res.rds")
 
-train_samples <- read.csv("tmp/NMF/train_samples.txt", header = F)$V1
+train_samples <- read.csv("res/NMF/train_samples.txt", header = F)$V1
 test_samples <- read.csv("tmp/NMF/test_samples.txt", header = F)$V1
 val_samples <- read.csv("tmp/NMF/val_samples.txt", header = F)$V1
 

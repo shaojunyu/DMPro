@@ -5,32 +5,41 @@ library(tidyverse)
 options(mc.cores = 4)
 options(ignore.interactive = TRUE)
 
+
+chr <- 20
+data1 <- "tmp/EPIC_V1_V2/EPIC_V1_chr20.csv"
+data2 <- "tmp/EPIC_V1_V2/EPIC_V2_chr20.csv"
+data_dir <- str_remove(data1, basename(data1))
+res_dir <- "res/EPIC_V1_V2_baseline/"
+# imputation type EPIC_V1_V2, HM450_EPIC
+imputation_type <- "EPIC_V1_V2"
+
+# check type
+if (!imputation_type %in% c("EPIC_V1_V2", "HM450_EPIC")) {
+  stop("Invalid type")
+}
+
 # load the training data, chr
-args = commandArgs(trailingOnly=TRUE)
-# if (length(args) == 1) {
-#   chr <- as.numeric(args[1])
-# } else{
-#   chr <- 20
-# }
-# print(chr)
-# quit(save = "no")
-chr <- 8
-data_dir <- "tmp/AliciaKSmith_450K_EPIC/"
-res_dir <- "res/AliciaKSmith_450K_EPIC_baseline/"
+# args = commandArgs(trailingOnly=TRUE)
+# chr <- as.numeric(args[1])
+# data_prefix <- args[2]
+# res_dir <- args[3]
 
-chr <- as.numeric(args[1])
-data_dir <- args[2]
-res_dir <- args[3]
+# support for EPIC V1 -> V2
+HM450 <- fread(data1)
+EPIC <- fread(data2)
 
-HM450 <- fread(sprintf("%s/HM450_chr%d.csv", data_dir, chr))
-EPIC <- fread(sprintf("%s/EPIC_chr%d.csv", data_dir, chr))
+# HM450 <- fread("tmp/EPIC_V1_V2/EPIC_V1_chr8.csv")
+# EPIC <- fread("tmp/EPIC_V1_V2/EPIC_V2_chr8.csv")
 
 HM450 %>%
   drop_na() %>%
+  distinct(ID, .keep_all = T) %>%
   arrange(MAPINFO) -> HM450
 
 EPIC %>%
   drop_na() %>%
+  distinct(ID, .keep_all = T) %>%
   arrange(MAPINFO) -> EPIC
 
 # for EPIC data, use only the EPIC-only probes
@@ -218,7 +227,7 @@ saveRDS(pred_glm_res,
 
 ############################# PFR ######################################
 cat("PFR\n")
-source("src/CUE/PFR.R")
+# source("src/CUE/PFR.R")
 
 # K = 4
 # pred_CUE_equal_weighs <- 1/ K * (pred_Logistic_test + pred_KNN_test + pred_RF_test + pred_PFR_test)

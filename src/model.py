@@ -64,6 +64,8 @@ class MaskedAutoencoder1D(nn.Module):
         x = F.relu(self.dec1(x))
         x = F.relu(self.dec2(x))
         x = self.dec3(x)
+        # make sure the decoded vector is within the range of [0, 1], methyldation level
+        x = torch.sigmoid(x)
         return x
 
     def forward(self, x, mask_prob=0):
