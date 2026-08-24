@@ -1,4 +1,4 @@
-# AutoMethylate
+# DMPro
 DNA methylation imputation tool powered by the fusion of autoencoder and NMF algorithms
 
 ## Information about the methylation array
