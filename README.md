@@ -28,8 +28,8 @@ Illumina Infinium MethylationEPIC version 2 | EPICv2 | GPL33022 | 937,691 | Jan 
     - tidyverse
 
 ```bash
-conda create -n automethy python=3.10
-conda activate automethy
+conda create -n dmpro python=3.10
+conda activate dmpro
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 ```
 
@@ -37,7 +37,7 @@ conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvi
 ```bash
 
 ## model training, Anke Huels's data
-conda activate automethy
+conda activate dmpro
 for chr in {1..22}; do
     echo $chr
     python src/AE.py \
