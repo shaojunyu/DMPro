@@ -1,10 +1,10 @@
-data/*
-data_bk/*
+data/
+data_bk/
 .Rproj.user
 .Rhistory
 .vscode
-old/*
-tmp/*
+old/
+tmp/
 .ipynb_checkpoints/
 model.cpython-310.pyc
-res/*
+res/

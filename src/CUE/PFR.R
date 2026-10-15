@@ -48,7 +48,9 @@ if(imputation_type == "HM450_EPIC"){
 if(imputation_type == "EPIC_V1_V2"){
   annotation.450K <- fread(cmd = 'grep -v ^# data/annotations/GPL33022\\(EPICv2\\)-233683.txt') %>%
     as.data.frame()
-  rownames(annotation.450K) <- annotation.450K$ID
+  # index by Name (plain cg id); ID carries a suffix and matches no v1 probe
+  annotation.450K <- annotation.450K[!duplicated(annotation.450K$Name),]
+  rownames(annotation.450K) <- annotation.450K$Name
   annotation.450K <- annotation.450K[ID,]
 }
 
@@ -56,6 +58,10 @@ rownames(X_450) <- rownames(annotation.450K)
 X_450 = log2(X_450/(1-X_450))
 
 isl_group <- c("", "Island", "N_Shelf", "N_Shore", "S_Shore", "S_Shelf")
+
+# island group of each predictor probe; unknown (NA) or ambiguous ("A;B") ones are excluded
+isl <- annotation.450K[, "Relation_to_UCSC_CpG_Island"]
+isl[is.na(isl) | grepl(";", isl)] <- "<excluded>"
 
 train.dens <- list()
 train.funcs <- list()
@@ -69,9 +75,9 @@ for (l in isl_group) {
     j <- l
   }
   # max(X)==13.28757
-  test.dens[[j]] <- X_450[annotation.450K[, "Relation_to_UCSC_CpG_Island"] == l,test_idx]
+  test.dens[[j]] <- X_450[isl == l,test_idx]
   test.funcs[[j]] <- apply(test.dens[[j]], 2, function(x) {density(x,from=-13.38757,to=13.38757)$y})
-  train.dens[[j]] <- X_450[annotation.450K[, "Relation_to_UCSC_CpG_Island"] == l,train_idx] 
+  train.dens[[j]] <- X_450[isl == l,train_idx]
   train.funcs[[j]] <- apply(train.dens[[j]], 2, function(x) {density(x,from=-13.38757,to=13.38757)$y})   
 }
 

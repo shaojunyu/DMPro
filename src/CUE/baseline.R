@@ -2,28 +2,48 @@
 # ref: https://github.com/GangLiTarheel/CUE
 library(data.table)
 library(tidyverse)
-options(mc.cores = 4)
+options(mc.cores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", "4")))
 options(ignore.interactive = TRUE)
 
+# usage: baseline.R <chr> <data_dir> <res_dir> [imputation_type]
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) < 3) {
+  stop("usage: baseline.R <chr> <data_dir> <res_dir> [imputation_type]")
+}
+chr <- as.numeric(args[1])
+data_dir <- args[2]
+res_dir <- args[3]
 
-chr <- 20
-data1 <- "tmp/EPIC_V1_V2/EPIC_V1_chr20.csv"
-data2 <- "tmp/EPIC_V1_V2/EPIC_V2_chr20.csv"
-data_dir <- str_remove(data1, basename(data1))
-res_dir <- "res/EPIC_V1_V2_baseline/"
 # imputation type EPIC_V1_V2, HM450_EPIC
-imputation_type <- "EPIC_V1_V2"
+if (length(args) >= 4) {
+  imputation_type <- args[4]
+} else if (file.exists(sprintf("%s/EPIC_V1_chr%s.csv", data_dir, chr))) {
+  imputation_type <- "EPIC_V1_V2"
+} else {
+  imputation_type <- "HM450_EPIC"
+}
 
 # check type
 if (!imputation_type %in% c("EPIC_V1_V2", "HM450_EPIC")) {
   stop("Invalid type")
 }
 
-# load the training data, chr
-# args = commandArgs(trailingOnly=TRUE)
-# chr <- as.numeric(args[1])
-# data_prefix <- args[2]
-# res_dir <- args[3]
+# data1 is the measured platform used as predictors, data2 the platform whose
+# platform-specific probes are being imputed.
+if (imputation_type == "EPIC_V1_V2") {
+  data1 <- sprintf("%s/EPIC_V1_chr%s.csv", data_dir, chr)
+  data2 <- sprintf("%s/EPIC_V2_chr%s.csv", data_dir, chr)
+} else {
+  data1 <- sprintf("%s/HM450_chr%s.csv", data_dir, chr)
+  data2 <- sprintf("%s/EPIC_chr%s.csv", data_dir, chr)
+}
+
+# PFR is slow and needs tmp/CUE + the EPICv2 annotation; opt in with RUN_PFR=1.
+run_pfr <- Sys.getenv("RUN_PFR", "0") == "1"
+
+dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
+cat(sprintf("chr%s  type=%s  data_dir=%s  res_dir=%s  run_pfr=%s\n",
+            chr, imputation_type, data_dir, res_dir, run_pfr))
 
 # support for EPIC V1 -> V2
 HM450 <- fread(data1)
@@ -59,6 +79,11 @@ EPIC %>% arrange(MAPINFO) -> EPIC
 HM450 %>% arrange(MAPINFO) -> HM450
 
 y_probes <- EPIC[, .(ID, MAPINFO)]
+# rbindlist() takes its column names from the first element, so both branches
+# have to agree on them; the "X" row marks a probe too close to either end of
+# the chromosome to have 50 neighbours, and is dropped below.
+predictor_names <- paste0("X", 1:50)
+no_neighbours <- setNames(as.data.frame(matrix(rep("X", 50), nrow = 1)), predictor_names)
 pbmcapply::pbmclapply(1:nrow(y_probes), function(i){
   # print(i)
   y_probes[i, .(ID, MAPINFO)] -> tmp
@@ -68,17 +93,18 @@ pbmcapply::pbmclapply(1:nrow(y_probes), function(i){
   dist <- abs(tmp$MAPINFO - HM450$MAPINFO)
   which.min(dist) -> idx
   if (idx <= 24) {
-    return(data.frame(matrix(rep("X", 50), nrow = 1)))
+    return(no_neighbours)
   }
   if (idx > (nrow(HM450) - 25)) {
-    return(data.frame(matrix(rep("X", 50), nrow = 1)))
+    return(no_neighbours)
   }
   # get the upstream and downstream 25 probes
   HM450[(idx - 24):(idx + 25), .(ID, MAPINFO)] -> tmp2
-  matrix(tmp2$ID, nrow = 1) %>% as.data.frame()
+  setNames(as.data.frame(matrix(tmp2$ID, nrow = 1)), predictor_names)
 }) -> near_probes
 
 rbindlist(near_probes) -> X_probes
+stopifnot(identical(names(X_probes), predictor_names))
 predictors <- cbind(y_probes, X_probes)
 
 # remove invalid probes
@@ -226,8 +252,12 @@ saveRDS(pred_glm_res,
         sprintf("%s/pred_glm_res_chr%s.rds", res_dir, chr))
 
 ############################# PFR ######################################
-cat("PFR\n")
-# source("src/CUE/PFR.R")
+if (run_pfr) {
+  cat("PFR\n")
+  source("src/CUE/PFR.R")
+} else {
+  cat("PFR skipped (set RUN_PFR=1 to enable)\n")
+}
 
 # K = 4
 # pred_CUE_equal_weighs <- 1/ K * (pred_Logistic_test + pred_KNN_test + pred_RF_test + pred_PFR_test)
