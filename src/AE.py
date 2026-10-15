@@ -36,7 +36,10 @@ parser.add_argument("--decode_file", type=str, default="",
                     help="file to store the decoded data")
 parser.add_argument("--pearson_loss", type=float, default=0,
                     help="ratio of pearson loss")
-                    
+parser.add_argument("--align_prefix", type=str, default="",
+                    help="transfer: align input probes to this source dataset's "
+                         "probe order (encode/test/decode only)")
+
 args = parser.parse_args()
 
 # read the bin size file
@@ -48,7 +51,9 @@ if args.bin_size_file:
     print("bin_size: ", args.bin_size, "step_size: ", args.step_size)
 
 bin_size = args.bin_size
-seed, epochs, batch_size, learning_rate = 0, args.epochs, args.batch_size, args.learning_rate
+seed, epochs, batch_size, learning_rate = args.seed, args.epochs, args.batch_size, args.learning_rate
+torch.manual_seed(seed)
+np.random.seed(seed)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
 
@@ -73,8 +78,23 @@ sample_names = data.columns.values
 # transpose the data so that rows are samples, columns are features
 data = data.transpose()
 
+# transfer: put each probe at the position the source model was trained on
+measured_probes = None
+if args.align_prefix and args.mode in ("encode", "test", "decode"):
+    src_path = args.align_prefix + "/{}_chr{}.csv".format(args.platform, args.chr)
+    src_probes = pd.read_csv(src_path, usecols=["ID"])["ID"].values
+    target_probes = set(data.columns)
+    measured_probes = [p for p in src_probes if p in target_probes]
+    data = data.reindex(columns=src_probes)
+    probe_names = src_probes
+    print("align: source grid probes={}, measured by target={}".format(
+        len(src_probes), len(measured_probes)))
+
 # Handle NA values: Here, I'll replace NA with the mean of the column, but you can choose any other strategy.
 data.fillna(data.mean(), inplace=True)
+# probes the target never measured: fill with the overall mean
+if measured_probes is not None:
+    data.fillna(data.to_numpy()[np.isfinite(data.to_numpy())].mean(), inplace=True)
 
 # split the data into training, validation, and testing sets
 train_samples = pd.read_csv(args.data_prefix + 
@@ -169,7 +189,8 @@ if args.mode == "encode":
     # model.load_state_dict(torch.load(
     #     "./tmp/models/{}_chr{}_{}.pt".format(args.platform, args.chr, bin_size)))
     model.load_state_dict(torch.load(
-        args.model_path + "/{}_chr{}_{}_{}.pt".format(args.platform, args.chr, bin_size, args.step_size)))
+        args.model_path + "/{}_chr{}_{}_{}.pt".format(args.platform, args.chr, bin_size, args.step_size),
+        map_location=device))
     model.eval()
     print("Encoding...")
     # data = data.to_numpy()
@@ -211,7 +232,8 @@ if args.mode == "encode":
 
 if args.mode == "decode":
     model.load_state_dict(torch.load(
-        args.model_path + "/{}_chr{}_{}_{}.pt".format(args.platform, args.chr, bin_size, args.step_size)))
+        args.model_path + "/{}_chr{}_{}_{}.pt".format(args.platform, args.chr, bin_size, args.step_size),
+        map_location=device))
     model.eval()
     print("Decoding...")
 
@@ -276,7 +298,7 @@ if args.mode == "test":
     #           args.chr, bin_size))
     # exit()
     m = args.model_path + "/{}_chr{}_{}_{}.pt".format(args.platform, args.chr, bin_size, args.step_size)
-    model.load_state_dict(torch.load(m))
+    model.load_state_dict(torch.load(m, map_location=device))
     # print("Model: ", m[0])
     # load the model
     # model.load_state_dict(torch.load(
@@ -331,7 +353,12 @@ if args.mode == "test":
     # rearrange the rows and columns to match the test data
     prediction = prediction.loc[test_data.index.values,
                                 test_data.columns.values]
-    
+
+    # transfer: score only probes the target actually measured
+    if measured_probes is not None:
+        prediction = prediction[measured_probes]
+        test_data = test_data[measured_probes]
+
     # for each column of prediction and test data, calculate the correlation
     corr = []
     for i in range(len(prediction.columns)):
